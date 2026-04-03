@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Short-Run Macroeconomic Models</title>
+  <script>
+    window.mathJaxReady = false;
+    window.mathJaxFailed = false;
+    window.MathJax = {
+      tex: {
+        inlineMath: [["$", "$"], ["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]],
+      },
+      svg: {
+        fontCache: "global",
+      },
+      startup: {
+        ready() {
+          MathJax.startup.defaultReady();
+          window.mathJaxReady = true;
+          if (typeof window.renderEquationsFromMathJax === "function") {
+            window.renderEquationsFromMathJax();
+          }
+        },
+      },
+    };
+    function mathJaxLoadFailed() {
+      window.mathJaxFailed = true;
+      if (typeof window.renderEquationsFallback === "function") {
+        window.renderEquationsFallback();
+      }
+    }
+  </script>
+  <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" onerror="mathJaxLoadFailed()"></script>
+  <style>
+    :root {
+      --bg: #efe7db;
+      --panel: rgba(255, 252, 246, 0.94);
+      --panel-strong: #fffdf8;
+      --border: rgba(62, 73, 82, 0.14);
+      --ink: #213038;
+      --muted: #657780;
+      --accent: #174f58;
+      --accent-soft: #d4e6df;
+      --blue: #2b63d9;
+      --red: #cc5a43;
+      --green: #1f8b6d;
+      --gold: #a26a18;
+      --shadow: 0 18px 40px rgba(33, 48, 56, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(23, 79, 88, 0.16), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(162, 106, 24, 0.12), transparent 26%),
+        linear-gradient(160deg, #f4ede3 0%, #ece2d4 100%);
+    }
+
+    .page {
+      max-width: 1680px;
+      margin: 0 auto;
+      padding: 24px 24px 32px;
+    }
+
+    .masthead {
+      padding: 28px 30px 24px;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: linear-gradient(140deg, rgba(255, 252, 246, 0.98), rgba(247, 242, 234, 0.92));
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .masthead h1 {
+      margin: 0 0 10px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2rem, 3.4vw, 3rem);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .subheader {
+      display: grid;
+      gap: 4px;
+      color: var(--ink);
+      font-size: clamp(0.96rem, 1.4vw, 1.06rem);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(360px, 430px) minmax(0, 1fr);
+      gap: 20px;
+      margin-top: 20px;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 20px;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+      max-height: calc(100vh - 40px);
+      overflow: auto;
+    }
+
+    .model-switch {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .model-btn,
+    .action-btn,
+    .download-btn {
+      border: 1px solid rgba(23, 79, 88, 0.2);
+      background: #f9f5ee;
+      color: var(--ink);
+      border-radius: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .model-btn {
+      padding: 12px 10px;
+      font-size: 0.96rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .model-btn.active {
+      background: linear-gradient(135deg, rgba(23, 79, 88, 0.96), rgba(38, 106, 116, 0.96));
+      color: #fff;
+      border-color: transparent;
+      transform: translateY(-1px);
+    }
+
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .scenario-panel {
+      border: 1px solid rgba(62, 73, 82, 0.12);
+      border-radius: 18px;
+      background: var(--panel-strong);
+      padding: 14px 14px 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .scenario-panel h2 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+    }
+
+    .scenario-head,
+    .param-row {
+      display: grid;
+      grid-template-columns: minmax(44px, 58px) minmax(90px, 118px) minmax(90px, 118px);
+      gap: 8px;
+      align-items: center;
+      justify-content: start;
+    }
+
+    .scenario-head {
+      padding: 0 2px 6px;
+      border-bottom: 1px solid rgba(62, 73, 82, 0.08);
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .scenario-head span:first-child {
+      color: transparent;
+      user-select: none;
+    }
+
+    .field-grid {
+      display: grid;
+      gap: 8px;
+      justify-content: start;
+    }
+
+    .param-field {
+      display: contents;
+    }
+
+    .param-cell {
+      min-width: 0;
+    }
+
+    .param-symbol {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1rem;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+
+    .param-row input,
+    .preset-row input,
+    .preset-row select {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid rgba(62, 73, 82, 0.18);
+      border-radius: 12px;
+      padding: 7px 10px;
+      font-size: 0.95rem;
+      font: inherit;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .sidebar > .actions:last-of-type {
+      display: none;
+    }
+
+    .action-btn {
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .preset-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+    }
+
+    .main {
+      display: grid;
+      gap: 18px;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: rgba(255, 252, 246, 0.96);
+      box-shadow: var(--shadow);
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid rgba(62, 73, 82, 0.1);
+    }
+
+    .card-head h2 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.01em;
+      line-height: 1.35;
+    }
+
+    .download-btn {
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    .card-body {
+      padding: 10px 12px 14px;
+    }
+
+    .plot-frame {
+      width: 100%;
+      height: 330px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 330px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      background: #fff;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(62, 73, 82, 0.1);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #f7f2ea;
+      z-index: 1;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .equations-card .card-body {
+      min-height: 280px;
+    }
+
+    .equations-list {
+      display: grid;
+      gap: 12px;
+      padding: 8px 6px 2px;
+      min-height: 230px;
+      align-content: start;
+    }
+
+    .equations-list .equation {
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(244, 237, 227, 0.74);
+      border: 1px solid rgba(62, 73, 82, 0.08);
+      overflow-x: auto;
+    }
+
+    .equations-pdf {
+      display: none;
+      width: 100%;
+      min-height: 540px;
+      border: none;
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    .model-btn:hover,
+    .action-btn:hover,
+    .download-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(23, 79, 88, 0.34);
+    }
+
+    @media (max-width: 1340px) {
+      .card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 980px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        padding: 14px 14px 24px;
+      }
+
+      .card-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .scenario-head,
+      .param-row {
+        grid-template-columns: minmax(38px, 48px) minmax(82px, 102px) minmax(82px, 102px);
+      }
+
+      .preset-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="masthead">
+      <h1>Short-Run Macroeconomic Models</h1>
+      <div class="subheader">
+        <div>General Macroeconomics – EC0113 - MS1002</div>
+        <div>Professor: José Miguel Arias Mejía</div>
+        <div>Universidad EAFIT</div>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar">
+        <div class="actions">
+          <button id="copy-btn-top" class="action-btn" type="button">Copy 1 -&gt; 2</button>
+          <div class="preset-row">
+            <input id="preset-name-top" type="text" value="Preset 1" placeholder="Preset">
+            <button id="save-btn-top" class="action-btn" type="button">Save</button>
+          </div>
+          <div class="preset-row">
+            <select id="preset-select-top" aria-label="Saved presets"></select>
+            <button id="load-btn-top" class="action-btn" type="button">Load</button>
+          </div>
+        </div>
+
+        <div class="model-switch">
+          <button id="model-ismp" class="model-btn active" type="button">IS-MP</button>
+          <button id="model-islm" class="model-btn" type="button">IS-LM</button>
+        </div>
+
+        <div class="scenario-grid">
+          <section class="scenario-panel">
+            <div class="scenario-head">
+              <span>Parameter</span>
+              <span>Scenario 1</span>
+              <span>Scenario 2</span>
+            </div>
+            <div id="parameter-grid" class="field-grid"></div>
+          </section>
+        </div>
+
+        <div class="actions">
+          <button id="copy-btn" class="action-btn" type="button">Copy 1 → 2</button>
+          <div class="preset-row">
+            <input id="preset-name" type="text" value="Preset 1" placeholder="Preset">
+            <button id="save-btn" class="action-btn" type="button">Save</button>
+          </div>
+          <div class="preset-row">
+            <select id="preset-select" aria-label="Saved presets"></select>
+            <button id="load-btn" class="action-btn" type="button">Load</button>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section class="card-grid">
+          <article class="card">
+            <div class="card-head">
+              <h2>Endogenous Variables</h2>
+              <button class="download-btn" type="button" data-export-kind="node" data-export-target="endogenous-table" data-export-name="endogenous-variables">PNG</button>
+            </div>
+            <div class="card-body">
+              <div id="table-wrap" class="table-wrap"></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-head">
+              <h2 id="main-model-title">IS-MP Diagram</h2>
+              <button class="download-btn" type="button" data-export-kind="plot" data-export-target="main-model-plot" data-export-name="main-model-diagram">PNG</button>
+            </div>
+            <div class="card-body">
+              <div id="main-model-plot" class="plot-frame"></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-head">
+              <h2>Phillips Curve</h2>
+              <button class="download-btn" type="button" data-export-kind="plot" data-export-target="phillips-plot" data-export-name="phillips-curve">PNG</button>
+            </div>
+            <div class="card-body">
+              <div id="phillips-plot" class="plot-frame"></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-head">
+              <h2>Okun’s Law</h2>
+              <button class="download-btn" type="button" data-export-kind="plot" data-export-target="okun-plot" data-export-name="okuns-law">PNG</button>
+            </div>
+            <div class="card-body">
+              <div id="okun-plot" class="plot-frame"></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-head">
+              <h2 id="investment-market-title">Investment-Savings Market</h2>
+              <button class="download-btn" type="button" data-export-kind="plot" data-export-target="investment-plot" data-export-name="investment-savings-market">PNG</button>
+            </div>
+            <div class="card-body">
+              <div id="investment-plot" class="plot-frame"></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-head">
+              <h2 id="money-market-title">Money Market</h2>
+              <button class="download-btn" type="button" data-export-kind="plot" data-export-target="money-plot" data-export-name="money-market">PNG</button>
+            </div>
+            <div class="card-body">
+              <div id="money-plot" class="plot-frame"></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="card equations-card">
+          <div class="card-head">
+            <h2>Equations</h2>
+          </div>
+          <div class="card-body">
+            <div id="equations-list" class="equations-list"></div>
+            <iframe id="equations-pdf" class="equations-pdf" src="Models_Midterm_2.pdf#view=FitH" title="Models Midterm 2 PDF"></iframe>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script>
+    const STORAGE_KEY = "shortRunMacroeconomicModels.presets.v1";
+    const SHARED_KEYS = ["aC", "aI", "aG", "aX", "aM", "bI", "rBar", "tau", "pi", "MDmax", "mi", "mY", "vBar", "oBar", "muBar", "wBar", "yBar"];
+    const PARAM_ORDER = ["aC", "aI", "aG", "aX", "aM", "bI", "rBar", "tau", "RBar", "MBar", "pi", "MDmax", "mi", "mY", "vBar", "oBar", "muBar", "wBar", "yBar"];
+    const numberFormatter = new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+    const SCENARIO_STYLES = {
+      scenario1: { dash: "dash", label: "Scenario 1", eqColor: "#24343c" },
+      scenario2: { dash: "solid", label: "Scenario 2", eqColor: "#8c5a17" },
+    };
+    const CURVE_COLORS = {
+      is: "#2b63d9",
+      mpLm: "#cc5a43",
+      phillips: "#1f8b6d",
+      okun: "#a26a18",
+      investment: "#2b63d9",
+      savings: "#cc5a43",
+      moneyDemand: "#2b63d9",
+      moneySupply: "#cc5a43",
+    };
+    const PARAM_META = {
+      aC: { symbolHtml: "ā<sub>C</sub>", fullName: "Autonomous component of consumption", default: 0.3, step: 0.05, models: ["ismp", "islm"] },
+      aI: { symbolHtml: "ā<sub>I</sub>", fullName: "Autonomous component of investment", default: 0.3, step: 0.05, models: ["ismp", "islm"] },
+      aG: { symbolHtml: "ā<sub>G</sub>", fullName: "Autonomous component of government purchases", default: 0.3, step: 0.05, models: ["ismp", "islm"] },
+      aX: { symbolHtml: "ā<sub>X</sub>", fullName: "Autonomous component of exports", default: 0.3, step: 0.05, models: ["ismp", "islm"] },
+      aM: { symbolHtml: "ā<sub>M</sub>", fullName: "Autonomous component of imports", default: 0.2, step: 0.05, models: ["ismp", "islm"] },
+      bI: { symbolHtml: "b̄<sub>I</sub>", fullName: "Sensitivity of investment to the real interest rate", default: 0.1, step: 0.01, models: ["ismp", "islm"] },
+      rBar: { symbolHtml: "r̄<sub>t</sub>", fullName: "Marginal product of physical capital", default: 0.1, step: 0.01, models: ["ismp", "islm"] },
+      tau: { symbolHtml: "τ", fullName: "Personal income tax rate", default: 0, step: 0.01, models: ["ismp", "islm"] },
+      RBar: { symbolHtml: "R̄", fullName: "Exogenous real interest rate", default: 0.1, step: 0.01, models: ["ismp"] },
+      MBar: { symbolHtml: "M̄<sub>t</sub>", fullName: "Exogenous money supply", default: 10, step: 0.1, models: ["islm"] },
+      pi: { symbolHtml: "π<sub>t</sub>", fullName: "Inflation rate for the current period", default: 0.3, step: 0.01, models: ["ismp", "islm"] },
+      MDmax: { symbolHtml: "M<sup>D</sup><sub>max</sub>", fullName: "Money demand at zero interest rate", default: 10, step: 0.1, models: ["ismp", "islm"] },
+      mi: { symbolHtml: "m<sub>i</sub>", fullName: "Sensitivity of money demand to the nominal interest rate", default: 5, step: 0.1, models: ["ismp", "islm"] },
+      mY: { symbolHtml: "m<sub>Y</sub>", fullName: "Sensitivity of money demand to the business cycle", default: 1, step: 0.1, models: ["ismp", "islm"] },
+      vBar: { symbolHtml: "v̄", fullName: "Sensitivity of the change in inflation to the business cycle", default: 0.5, step: 0.05, models: ["ismp", "islm"] },
+      oBar: { symbolHtml: "ō", fullName: "Exogenous shifts to the Phillips Curve", default: 0, step: 0.01, models: ["ismp", "islm"] },
+      muBar: { symbolHtml: "μ̄", fullName: "Long-run unemployment rate", default: 0.05, step: 0.01, models: ["ismp", "islm"] },
+      wBar: { symbolHtml: "w̄", fullName: "Sensitivity of unemployment to the business cycle", default: 0.01, step: 0.001, models: ["ismp", "islm"] },
+      yBar: { symbolHtml: "Ȳ<sub>t</sub>", fullName: "Potential GDP", default: 100, step: 1, models: ["ismp", "islm"] },
+    };
+    const RESULT_META = [
+      { key: "y", symbolHtml: "Ỹ<sub>t</sub>", changeMode: "pp" },
+      { key: "R", symbolHtml: "R<sub>t</sub>", changeMode: "pp" },
+      { key: "i", symbolHtml: "i<sub>t</sub>", changeMode: "pp" },
+      { key: "moneyDemand", symbolHtml: "M<sup>D</sup><sub>t</sub>", changeMode: "pct" },
+      { key: "moneySupply", symbolHtml: "M<sup>S</sup><sub>t</sub>", changeMode: "pct" },
+      { key: "savings", symbolHtml: "S<sub>t</sub>", changeMode: "pct" },
+      { key: "investment", symbolHtml: "I<sub>t</sub>", changeMode: "pct" },
+      { key: "deltaPi", symbolHtml: "Δπ<sub>t+1</sub>", changeMode: "pp" },
+      { key: "piExpected", symbolHtml: "π<sup>e</sup><sub>t+1</sub>", changeMode: "pp" },
+      { key: "mu", symbolHtml: "μ<sub>t</sub>", changeMode: "pp" },
+    ];
+    const BASELINE_PRESET = Object.fromEntries(
+      Object.entries(PARAM_META).map(([key, meta]) => [key, meta.default])
+    );
+    const appState = {
+      model: "ismp",
+      scenario1: deepClone(BASELINE_PRESET),
+      scenario2: deepClone(BASELINE_PRESET),
+      presets: loadStoredPresets(),
+    };
+    const MODEL_META = {
+      ismp: {
+        title: "IS-MP Diagram",
+        marketSuffix: " (IS-MP)",
+        latexEquations: [
+          String.raw`\tilde{Y}_t = \bar{a}_C + \bar{a}_I + \bar{a}_G + \bar{a}_X - \bar{a}_M - 1 - \bar{b}_I\left(R_t - \bar{r}_t \right) - \bar{a}_C \tau`,
+          String.raw`R_t = \bar{R}`,
+          String.raw`i_t = R_t + \pi_t`,
+          String.raw`M^D_t = M^D_{max} - m_i i_t + m_Y \bar{Y}_t`,
+          String.raw`M^S_t = M^D_t`,
+          String.raw`S_t = \left[ 1 - (1+\tau)\bar{a}_C - \bar{a}_G - \bar{a}_X + \bar{a}_M \right] \bar{Y}_t`,
+          String.raw`I_t = \left[ \bar{a}_I - \bar{b}_I\left(R_t - \bar{r}_t\right) \right] \bar{Y}_t`,
+          String.raw`\Delta\pi_{t+1} = \pi^e_{t+1} - \pi_t`,
+          String.raw`\Delta\pi_{t+1} = \bar{v}\tilde{Y}_t + \bar{o}`,
+          String.raw`\mu_t - \bar{\mu} = -\bar{w}\tilde{Y}_t`,
+        ],
+      },
+      islm: {
+        title: "IS-LM Diagram",
+        marketSuffix: " (IS-LM)",
+        latexEquations: [
+          String.raw`\tilde{Y}_t = \bar{a}_C + \bar{a}_I + \bar{a}_G + \bar{a}_X - \bar{a}_M - 1 - \bar{b}_I\left(R_t - \bar{r}_t \right) - \bar{a}_C \tau`,
+          String.raw`\bar{Y}_t = \frac{\bar{M}_t}{m_Y} - \frac{M^D_{max}}{m_Y} + \frac{m_i}{m_Y}\left(R_t + \pi_t\right)`,
+          String.raw`i_t = R_t + \pi_t`,
+          String.raw`M^D_t = M^D_{max} - m_i i_t + m_Y \bar{Y}_t`,
+          String.raw`M^S_t = \bar{M}_t`,
+          String.raw`M^S_t = M^D_t`,
+          String.raw`S_t = \left[ 1 - (1+\tau)\bar{a}_C - \bar{a}_G - \bar{a}_X + \bar{a}_M \right] \bar{Y}_t`,
+          String.raw`I_t = \left[ \bar{a}_I - \bar{b}_I\left(R_t - \bar{r}_t\right) \right] \bar{Y}_t`,
+          String.raw`\Delta\pi_{t+1} = \pi^e_{t+1} - \pi_t`,
+          String.raw`\Delta\pi_{t+1} = \bar{v}\tilde{Y}_t + \bar{o}`,
+          String.raw`\mu_t - \bar{\mu} = -\bar{w}\tilde{Y}_t`,
+        ],
+      },
+    };
+    let renderFrame = 0;
+
+    function deepClone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function loadStoredPresets() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        return stored ? JSON.parse(stored) : {};
+      } catch (_error) {
+        return {};
+      }
+    }
+
+    function saveStoredPresets() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState.presets));
+    }
+
+    function computeIsBase(params) {
+      return params.aC + params.aI + params.aG + params.aX - params.aM - 1 - params.aC * params.tau;
+    }
+
+    function computeIsIntercept(params) {
+      return computeIsBase(params) + params.bI * params.rBar;
+    }
+
+    function isCurveY(params, R) {
+      return computeIsBase(params) - params.bI * (R - params.rBar);
+    }
+
+    function lmCurveY(params, R) {
+      return params.yBar;
+    }
+
+    function savingsValue(params, y) {
+      return (1 - (1 + params.tau) * params.aC - params.aG - params.aX + params.aM) * params.yBar;
+    }
+
+    function investmentValue(params, y, R) {
+      return (params.aI - params.bI * (R - params.rBar)) * params.yBar;
+    }
+
+    function lmRate(params) {
+      if (Math.abs(params.mi) < 1e-9) {
+        return NaN;
+      }
+      return ((params.mY * params.yBar) - params.MBar + params.MDmax) / params.mi - params.pi;
+    }
+
+    function invalidResult(model, params) {
+      return {
+        model,
+        params,
+        valid: false,
+        y: NaN,
+        R: NaN,
+        i: NaN,
+        moneyDemand: NaN,
+        moneySupply: NaN,
+        savings: NaN,
+        investment: NaN,
+        deltaPi: NaN,
+        piExpected: NaN,
+        mu: NaN,
+        muGap: NaN,
+        savingsCoeff: 1 - (1 + params.tau) * params.aC - params.aG - params.aX + params.aM,
+      };
+    }
+
+    function finalizeResult(model, params, y, R) {
+      const i = R + params.pi;
+      const moneyDemand = params.MDmax - params.mi * i + params.mY * params.yBar;
+      const moneySupply = model === "ismp" ? moneyDemand : params.MBar;
+      const savings = savingsValue(params, params.yBar);
+      const investment = investmentValue(params, params.yBar, R);
+      const deltaPi = params.vBar * y + params.oBar;
+      const piExpected = params.pi + deltaPi;
+      const muGap = -params.wBar * y;
+      const mu = params.muBar + muGap;
+      const values = [y, R, i, moneyDemand, moneySupply, savings, investment, deltaPi, piExpected, mu];
+      return {
+        model,
+        params,
+        valid: values.every(Number.isFinite),
+        y,
+        R,
+        i,
+        moneyDemand,
+        moneySupply,
+        savings,
+        investment,
+        deltaPi,
+        piExpected,
+        mu,
+        muGap,
+        savingsCoeff: 1 - (1 + params.tau) * params.aC - params.aG - params.aX + params.aM,
+      };
+    }
+
+    MODEL_META.ismp.solve = function solveIsMp(params) {
+      const y = isCurveY(params, params.RBar);
+      return finalizeResult("ismp", params, y, params.RBar);
+    };
+
+    MODEL_META.islm.solve = function solveIsLm(params) {
+      const R = lmRate(params);
+      if (!Number.isFinite(R)) {
+        return invalidResult("islm", params);
+      }
+      return finalizeResult("islm", params, isCurveY(params, R), R);
+    };
+
+    function linspace(start, end, count) {
+      if (!Number.isFinite(start) || !Number.isFinite(end)) {
+        return Array.from({ length: count }, (_, index) => index);
+      }
+      if (count <= 1) {
+        return [start];
+      }
+      const step = (end - start) / (count - 1);
+      return Array.from({ length: count }, (_, index) => start + step * index);
+    }
+
+    function numericDomain(values, ratio, fallbackSpan) {
+      const finite = values.filter(Number.isFinite);
+      if (!finite.length) {
+        return [-fallbackSpan, fallbackSpan];
+      }
+      let min = Math.min(...finite);
+      let max = Math.max(...finite);
+      if (Math.abs(max - min) < 1e-9) {
+        const pad = Math.max(Math.abs(max) * ratio, fallbackSpan);
+        return [min - pad, max + pad];
+      }
+      const span = max - min;
+      const pad = Math.max(span * ratio, fallbackSpan * 0.2);
+      return [min - pad, max + pad];
+    }
+
+    function sampleInvestmentSavings(params, rDomain, solved) {
+      const rValues = linspace(rDomain[0], rDomain[1], 140);
+      const investmentCurve = rValues.map((R) => {
+        const y = isCurveY(params, R);
+        return investmentValue(params, y, R);
+      });
+      const savingsCurve = rValues.map((R) => {
+        const y = isCurveY(params, R);
+        return savingsValue(params, y);
+      });
+      let eqR = solved.R;
+      let eqX = solved.investment;
+      if (Math.abs(params.bI) > 1e-9) {
+        eqR = params.rBar + (params.aI - solved.savingsCoeff) / params.bI;
+        eqX = savingsValue(params, isCurveY(params, eqR));
+      }
+      return {
+        investment: { x: investmentCurve, y: rValues },
+        savings: { x: savingsCurve, y: rValues },
+        equilibrium: { x: eqX, y: eqR },
+      };
+    }
+
+    function sampleMoneyMarket(params, solved, iValues, supplyLevel) {
+      return {
+        demand: {
+          x: iValues.map((i) => params.MDmax - params.mi * i + params.mY * params.yBar),
+          y: iValues,
+        },
+        supply: {
+          x: iValues.map(() => supplyLevel),
+          y: iValues,
+        },
+        equilibrium: {
+          x: supplyLevel,
+          y: solved.i,
+        },
+      };
+    }
+
+    MODEL_META.ismp.sampleCurves = function sampleIsMpCurves(params, solved, domains) {
+      const rValues = linspace(domains.R[0], domains.R[1], 140);
+      const yValues = linspace(domains.Y[0], domains.Y[1], 140);
+      const iValues = linspace(domains.i[0], domains.i[1], 140);
+      return {
+        main: {
+          curveA: { x: rValues.map((R) => isCurveY(params, R)), y: rValues },
+          curveB: { x: yValues, y: yValues.map(() => params.RBar) },
+          equilibrium: { x: solved.y, y: solved.R },
+        },
+        phillips: {
+          curve: { x: yValues, y: yValues.map((y) => params.vBar * y + params.oBar) },
+          equilibrium: { x: solved.y, y: solved.deltaPi },
+        },
+        okun: {
+          curve: { x: yValues, y: yValues.map((y) => -params.wBar * y) },
+          equilibrium: { x: solved.y, y: solved.muGap },
+        },
+        investmentSavings: sampleInvestmentSavings(params, domains.investmentR, solved),
+        money: sampleMoneyMarket(params, solved, iValues, solved.moneySupply),
+      };
+    };
+
+    MODEL_META.islm.sampleCurves = function sampleIsLmCurves(params, solved, domains) {
+      const rValues = linspace(domains.R[0], domains.R[1], 140);
+      const yValues = linspace(domains.Y[0], domains.Y[1], 140);
+      const iValues = linspace(domains.i[0], domains.i[1], 140);
+      return {
+        main: {
+          curveA: { x: rValues.map((R) => isCurveY(params, R)), y: rValues },
+          curveB: { x: yValues, y: yValues.map(() => solved.R) },
+          equilibrium: { x: solved.y, y: solved.R },
+        },
+        phillips: {
+          curve: { x: yValues, y: yValues.map((y) => params.vBar * y + params.oBar) },
+          equilibrium: { x: solved.y, y: solved.deltaPi },
+        },
+        okun: {
+          curve: { x: yValues, y: yValues.map((y) => -params.wBar * y) },
+          equilibrium: { x: solved.y, y: solved.muGap },
+        },
+        investmentSavings: sampleInvestmentSavings(params, domains.investmentR, solved),
+        money: sampleMoneyMarket(params, solved, iValues, params.MBar),
+      };
+    };
+
+    function formatNumber(value) {
+      return Number.isFinite(value) ? numberFormatter.format(value) : "—";
+    }
+
+    function formatSignedNumber(value) {
+      if (!Number.isFinite(value)) {
+        return "—";
+      }
+      const sign = value > 0 ? "+" : value < 0 ? "−" : "";
+      return sign + numberFormatter.format(Math.abs(value));
+    }
+
+    function formatChange(value1, value2, mode) {
+      if (!Number.isFinite(value1) || !Number.isFinite(value2)) {
+        return "—";
+      }
+      if (mode === "pct") {
+        if (Math.abs(value1) < 1e-9) {
+          return "—";
+        }
+        return `${formatSignedNumber(((value2 - value1) / Math.abs(value1)) * 100)} %`;
+      }
+      return `${formatSignedNumber(value2 - value1)} pp.`;
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function renderScenarioFields() {
+      const container = document.getElementById("parameter-grid");
+      container.innerHTML = PARAM_ORDER
+        .filter((key) => PARAM_META[key].models.includes(appState.model))
+        .map((key) => {
+          const meta = PARAM_META[key];
+          return `
+            <div class="param-row">
+              <label class="param-cell" title="${escapeHtml(meta.fullName)}">
+                <span class="param-symbol">${meta.symbolHtml}</span>
+              </label>
+              <div class="param-cell">
+                <input
+                  type="number"
+                  step="${meta.step}"
+                  value="${appState.scenario1[key]}"
+                  data-scenario="scenario1"
+                  data-key="${key}"
+                  aria-label="${escapeHtml(meta.fullName)} Scenario 1"
+                >
+              </div>
+              <div class="param-cell">
+                <input
+                  type="number"
+                  step="${meta.step}"
+                  value="${appState.scenario2[key]}"
+                  data-scenario="scenario2"
+                  data-key="${key}"
+                  aria-label="${escapeHtml(meta.fullName)} Scenario 2"
+                >
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      document.querySelectorAll("[data-scenario][data-key]").forEach((input) => {
+        input.addEventListener("input", (event) => {
+          const element = event.currentTarget;
+          const nextValue = Number.parseFloat(element.value);
+          if (!Number.isFinite(nextValue)) {
+            return;
+          }
+          appState[element.dataset.scenario][element.dataset.key] = nextValue;
+          scheduleRender();
+        });
+      });
+    }
+
+    function renderPresetSelect() {
+      const names = Object.keys(appState.presets).sort((left, right) => left.localeCompare(right));
+      const html = names.length
+        ? names.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")
+        : `<option value="">Saved</option>`;
+      ["preset-select", "preset-select-top"].forEach((id) => {
+        const select = document.getElementById(id);
+        if (!select) {
+          return;
+        }
+        select.innerHTML = html;
+        select.disabled = names.length === 0;
+      });
+      ["load-btn", "load-btn-top"].forEach((id) => {
+        const button = document.getElementById(id);
+        if (button) {
+          button.disabled = names.length === 0;
+        }
+      });
+    }
+
+    function renderModelButtons() {
+      document.getElementById("model-ismp").classList.toggle("active", appState.model === "ismp");
+      document.getElementById("model-islm").classList.toggle("active", appState.model === "islm");
+      document.getElementById("main-model-title").textContent = MODEL_META[appState.model].title;
+      document.getElementById("investment-market-title").textContent = `Investment-Savings Market${MODEL_META[appState.model].marketSuffix}`;
+      document.getElementById("money-market-title").textContent = `Money Market${MODEL_META[appState.model].marketSuffix}`;
+    }
+
+    function renderTable(result1, result2) {
+      const rows = RESULT_META.map((meta) => `
+        <tr>
+          <td>${meta.symbolHtml}</td>
+          <td>${formatNumber(result1[meta.key])}</td>
+          <td>${formatNumber(result2[meta.key])}</td>
+          <td>${formatChange(result1[meta.key], result2[meta.key], meta.changeMode)}</td>
+        </tr>
+      `).join("");
+      document.getElementById("table-wrap").innerHTML = `
+        <table id="endogenous-table">
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Scenario 1</th>
+              <th>Scenario 2</th>
+              <th>Change</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function buildBaseLayout(xTitle, yTitle) {
+      return {
+        margin: { l: 58, r: 20, t: 18, b: 54 },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "#fffaf2",
+        hovermode: "closest",
+        legend: {
+          orientation: "h",
+          x: 0,
+          y: 1.12,
+          font: { size: 10, family: "Trebuchet MS, Gill Sans, sans-serif" },
+        },
+        xaxis: {
+          title: { text: xTitle },
+          gridcolor: "rgba(62,73,82,0.1)",
+          zerolinecolor: "rgba(62,73,82,0.16)",
+          hoverformat: ".2f",
+        },
+        yaxis: {
+          title: { text: yTitle },
+          gridcolor: "rgba(62,73,82,0.1)",
+          zerolinecolor: "rgba(62,73,82,0.16)",
+          hoverformat: ".2f",
+        },
+        font: {
+          family: "Trebuchet MS, Gill Sans, sans-serif",
+          color: "#213038",
+        },
+      };
+    }
+
+    function lineTrace(name, series, color, scenarioKey) {
+      return {
+        type: "scatter",
+        mode: "lines",
+        name,
+        x: series.x,
+        y: series.y,
+        line: {
+          color,
+          width: 2.6,
+          dash: SCENARIO_STYLES[scenarioKey].dash,
+        },
+      };
+    }
+
+    function equilibriumTrace(point, label, scenarioKey) {
+      return {
+        type: "scatter",
+        mode: "markers+text",
+        name: label,
+        x: [point.x],
+        y: [point.y],
+        text: [label],
+        textposition: "top right",
+        marker: {
+          size: 11,
+          color: SCENARIO_STYLES[scenarioKey].eqColor,
+          line: { width: 1.5, color: "#fffaf2" },
+        },
+        showlegend: false,
+      };
+    }
+
+    function renderPlot(targetId, traces, layout) {
+      if (!window.Plotly) {
+        return;
+      }
+      Plotly.react(targetId, traces, layout, {
+        displayModeBar: false,
+        responsive: true,
+      });
+    }
+
+    function renderCharts(modelKey, result1, result2) {
+      const model = MODEL_META[modelKey];
+      const rSeeds = [
+        result1.R,
+        result2.R,
+        appState.scenario1.RBar,
+        appState.scenario2.RBar,
+        appState.scenario1.rBar,
+        appState.scenario2.rBar,
+      ];
+      const RDomain = numericDomain(rSeeds, 0.32, 1);
+      const ySeeds = [
+        result1.y,
+        result2.y,
+        isCurveY(appState.scenario1, RDomain[0]),
+        isCurveY(appState.scenario1, RDomain[1]),
+        isCurveY(appState.scenario2, RDomain[0]),
+        isCurveY(appState.scenario2, RDomain[1]),
+      ];
+      const YDomain = numericDomain(ySeeds, 0.22, 1);
+      const iDomain = numericDomain([result1.i, result2.i, result1.R, result2.R], 0.24, 1);
+      const investmentEqR1 = Math.abs(appState.scenario1.bI) > 1e-9
+        ? appState.scenario1.rBar + (appState.scenario1.aI - result1.savingsCoeff) / appState.scenario1.bI
+        : result1.R;
+      const investmentEqR2 = Math.abs(appState.scenario2.bI) > 1e-9
+        ? appState.scenario2.rBar + (appState.scenario2.aI - result2.savingsCoeff) / appState.scenario2.bI
+        : result2.R;
+      const investmentRDomain = numericDomain([
+        result1.R,
+        result2.R,
+        investmentEqR1,
+        investmentEqR2,
+        appState.scenario1.rBar,
+        appState.scenario2.rBar,
+      ], 0.28, 1);
+      const domains = { R: RDomain, Y: YDomain, i: iDomain, investmentR: investmentRDomain };
+
+      const curves1 = model.sampleCurves(appState.scenario1, result1, domains);
+      const curves2 = model.sampleCurves(appState.scenario2, result2, domains);
+
+      const mainLayout = buildBaseLayout("Ỹ<sub>t</sub>", "R<sub>t</sub>");
+      mainLayout.xaxis.range = YDomain;
+      mainLayout.yaxis.range = RDomain;
+      mainLayout.xaxis.tickformat = ".0%";
+      mainLayout.xaxis.hoverformat = ".2%";
+      mainLayout.yaxis.tickformat = ".0%";
+      mainLayout.yaxis.hoverformat = ".2%";
+      renderPlot("main-model-plot", [
+        lineTrace("IS (1)", curves1.main.curveA, CURVE_COLORS.is, "scenario1"),
+        lineTrace(`${modelKey === "ismp" ? "MP" : "LM"} (1)`, curves1.main.curveB, CURVE_COLORS.mpLm, "scenario1"),
+        lineTrace("IS (2)", curves2.main.curveA, CURVE_COLORS.is, "scenario2"),
+        lineTrace(`${modelKey === "ismp" ? "MP" : "LM"} (2)`, curves2.main.curveB, CURVE_COLORS.mpLm, "scenario2"),
+        equilibriumTrace(curves1.main.equilibrium, "E1", "scenario1"),
+        equilibriumTrace(curves2.main.equilibrium, "E2", "scenario2"),
+      ], mainLayout);
+
+      const phillipsYDomain = numericDomain([
+        ...curves1.phillips.curve.y,
+        ...curves2.phillips.curve.y,
+        curves1.phillips.equilibrium.y,
+        curves2.phillips.equilibrium.y,
+      ], 0.22, 1);
+      const phillipsLayout = buildBaseLayout("Ỹ<sub>t</sub>", "Δπ<sub>t+1</sub>");
+      phillipsLayout.xaxis.range = YDomain;
+      phillipsLayout.yaxis.range = phillipsYDomain;
+      phillipsLayout.xaxis.tickformat = ".0%";
+      phillipsLayout.xaxis.hoverformat = ".2%";
+      renderPlot("phillips-plot", [
+        lineTrace("PC (1)", curves1.phillips.curve, CURVE_COLORS.phillips, "scenario1"),
+        lineTrace("PC (2)", curves2.phillips.curve, CURVE_COLORS.phillips, "scenario2"),
+        equilibriumTrace(curves1.phillips.equilibrium, "E1", "scenario1"),
+        equilibriumTrace(curves2.phillips.equilibrium, "E2", "scenario2"),
+      ], phillipsLayout);
+
+      const okunYDomain = numericDomain([
+        ...curves1.okun.curve.y,
+        ...curves2.okun.curve.y,
+        curves1.okun.equilibrium.y,
+        curves2.okun.equilibrium.y,
+      ], 0.22, 1);
+      const okunLayout = buildBaseLayout("Ỹ<sub>t</sub>", "μ<sub>t</sub> − μ̄");
+      okunLayout.xaxis.range = YDomain;
+      okunLayout.yaxis.range = okunYDomain;
+      okunLayout.xaxis.tickformat = ".0%";
+      okunLayout.xaxis.hoverformat = ".2%";
+      renderPlot("okun-plot", [
+        lineTrace("Okun (1)", curves1.okun.curve, CURVE_COLORS.okun, "scenario1"),
+        lineTrace("Okun (2)", curves2.okun.curve, CURVE_COLORS.okun, "scenario2"),
+        equilibriumTrace(curves1.okun.equilibrium, "E1", "scenario1"),
+        equilibriumTrace(curves2.okun.equilibrium, "E2", "scenario2"),
+      ], okunLayout);
+
+      const investmentXDomain = numericDomain([
+        ...curves1.investmentSavings.investment.x,
+        ...curves1.investmentSavings.savings.x,
+        ...curves2.investmentSavings.investment.x,
+        ...curves2.investmentSavings.savings.x,
+        curves1.investmentSavings.equilibrium.x,
+        curves2.investmentSavings.equilibrium.x,
+      ], 0.18, 1);
+      const investmentYDomain = numericDomain([
+        ...curves1.investmentSavings.investment.y,
+        ...curves2.investmentSavings.investment.y,
+        curves1.investmentSavings.equilibrium.y,
+        curves2.investmentSavings.equilibrium.y,
+      ], 0.22, 1);
+      const investmentLayout = buildBaseLayout("I<sub>t</sub>, S<sub>t</sub>", "R<sub>t</sub>");
+      investmentLayout.xaxis.range = investmentXDomain;
+      investmentLayout.yaxis.range = investmentYDomain;
+      investmentLayout.yaxis.tickformat = ".0%";
+      investmentLayout.yaxis.hoverformat = ".2%";
+      renderPlot("investment-plot", [
+        lineTrace("I (1)", curves1.investmentSavings.investment, CURVE_COLORS.investment, "scenario1"),
+        lineTrace("S (1)", curves1.investmentSavings.savings, CURVE_COLORS.savings, "scenario1"),
+        lineTrace("I (2)", curves2.investmentSavings.investment, CURVE_COLORS.investment, "scenario2"),
+        lineTrace("S (2)", curves2.investmentSavings.savings, CURVE_COLORS.savings, "scenario2"),
+        equilibriumTrace(curves1.investmentSavings.equilibrium, "E1", "scenario1"),
+        equilibriumTrace(curves2.investmentSavings.equilibrium, "E2", "scenario2"),
+      ], investmentLayout);
+
+      const moneyXDomain = numericDomain([
+        ...curves1.money.demand.x,
+        ...curves1.money.supply.x,
+        ...curves2.money.demand.x,
+        ...curves2.money.supply.x,
+        curves1.money.equilibrium.x,
+        curves2.money.equilibrium.x,
+      ], 0.16, 1);
+      const moneyYDomain = numericDomain([
+        ...curves1.money.demand.y,
+        ...curves2.money.demand.y,
+        curves1.money.equilibrium.y,
+        curves2.money.equilibrium.y,
+      ], 0.22, 1);
+      const moneyLayout = buildBaseLayout("M<sup>D</sup><sub>t</sub>, M<sup>S</sup><sub>t</sub>", "i<sub>t</sub>");
+      moneyLayout.xaxis.range = moneyXDomain;
+      moneyLayout.yaxis.range = moneyYDomain;
+      moneyLayout.yaxis.tickformat = ".0%";
+      moneyLayout.yaxis.hoverformat = ".2%";
+      renderPlot("money-plot", [
+        lineTrace("Mᴰ (1)", curves1.money.demand, CURVE_COLORS.moneyDemand, "scenario1"),
+        lineTrace("Mˢ (1)", curves1.money.supply, CURVE_COLORS.moneySupply, "scenario1"),
+        lineTrace("Mᴰ (2)", curves2.money.demand, CURVE_COLORS.moneyDemand, "scenario2"),
+        lineTrace("Mˢ (2)", curves2.money.supply, CURVE_COLORS.moneySupply, "scenario2"),
+        equilibriumTrace(curves1.money.equilibrium, "E1", "scenario1"),
+        equilibriumTrace(curves2.money.equilibrium, "E2", "scenario2"),
+      ], moneyLayout);
+    }
+
+    function renderEquations() {
+      if (window.mathJaxReady) {
+        window.renderEquationsFromMathJax();
+      } else if (window.mathJaxFailed) {
+        window.renderEquationsFallback();
+      }
+    }
+
+    window.renderEquationsFromMathJax = function renderEquationsFromMathJax() {
+      const container = document.getElementById("equations-list");
+      const pdf = document.getElementById("equations-pdf");
+      pdf.style.display = "none";
+      container.style.display = "grid";
+      container.innerHTML = MODEL_META[appState.model].latexEquations
+        .map((equation) => `<div class="equation">\\[${equation}\\]</div>`)
+        .join("");
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise([container]);
+      }
+    };
+
+    window.renderEquationsFallback = function renderEquationsFallback() {
+      document.getElementById("equations-list").style.display = "none";
+      document.getElementById("equations-pdf").style.display = "block";
+    };
+
+    function savePreset(name) {
+      const trimmed = name.trim();
+      if (!trimmed) {
+        return;
+      }
+      appState.presets[trimmed] = {
+        model: appState.model,
+        scenario1: deepClone(appState.scenario1),
+        scenario2: deepClone(appState.scenario2),
+      };
+      saveStoredPresets();
+      renderPresetSelect();
+      ["preset-select", "preset-select-top"].forEach((id) => {
+        const select = document.getElementById(id);
+        if (select) {
+          select.value = trimmed;
+        }
+      });
+    }
+
+    function loadPreset(name) {
+      const preset = appState.presets[name];
+      if (!preset) {
+        return;
+      }
+      appState.model = preset.model === "islm" ? "islm" : "ismp";
+      appState.scenario1 = { ...deepClone(BASELINE_PRESET), ...deepClone(preset.scenario1) };
+      appState.scenario2 = { ...deepClone(BASELINE_PRESET), ...deepClone(preset.scenario2) };
+      renderModelButtons();
+      renderScenarioFields();
+      scheduleRender();
+    }
+
+    async function downloadCardPng(kind, targetId, fileName) {
+      if (kind === "plot" && window.Plotly) {
+        const element = document.getElementById(targetId);
+        const dataUrl = await window.Plotly.toImage(element, {
+          format: "png",
+          width: Math.max(Math.round(element.clientWidth || 720), 720),
+          height: Math.max(Math.round(element.clientHeight || 420), 420),
+          scale: 3,
+        });
+        triggerDownload(dataUrl, `${fileName}.png`);
+        return;
+      }
+      if (kind === "node" && window.html2canvas) {
+        const source = document.getElementById(targetId);
+        const wrapper = document.createElement("div");
+        wrapper.style.position = "fixed";
+        wrapper.style.left = "-10000px";
+        wrapper.style.top = "0";
+        wrapper.style.padding = "16px";
+        wrapper.style.background = "#ffffff";
+        wrapper.appendChild(source.cloneNode(true));
+        document.body.appendChild(wrapper);
+        const canvas = await window.html2canvas(wrapper, {
+          backgroundColor: "#ffffff",
+          scale: 2,
+        });
+        document.body.removeChild(wrapper);
+        triggerDownload(canvas.toDataURL("image/png"), `${fileName}.png`);
+      }
+    }
+
+    function triggerDownload(dataUrl, fileName) {
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function scheduleRender() {
+      cancelAnimationFrame(renderFrame);
+      renderFrame = requestAnimationFrame(renderAll);
+    }
+
+    function renderAll() {
+      const result1 = MODEL_META[appState.model].solve(appState.scenario1);
+      const result2 = MODEL_META[appState.model].solve(appState.scenario2);
+      renderTable(result1, result2);
+      renderCharts(appState.model, result1, result2);
+      renderEquations();
+    }
+
+    function bindStaticEvents() {
+      document.getElementById("model-ismp").addEventListener("click", () => {
+        appState.model = "ismp";
+        renderModelButtons();
+        renderScenarioFields();
+        scheduleRender();
+      });
+      document.getElementById("model-islm").addEventListener("click", () => {
+        appState.model = "islm";
+        renderModelButtons();
+        renderScenarioFields();
+        scheduleRender();
+      });
+      document.getElementById("copy-btn").addEventListener("click", () => {
+        appState.scenario2 = deepClone(appState.scenario1);
+        renderScenarioFields();
+        scheduleRender();
+      });
+      document.getElementById("copy-btn-top").addEventListener("click", () => {
+        appState.scenario2 = deepClone(appState.scenario1);
+        renderScenarioFields();
+        scheduleRender();
+      });
+      document.getElementById("save-btn").addEventListener("click", () => {
+        savePreset(document.getElementById("preset-name").value);
+      });
+      document.getElementById("save-btn-top").addEventListener("click", () => {
+        savePreset(document.getElementById("preset-name-top").value);
+      });
+      document.getElementById("load-btn").addEventListener("click", () => {
+        loadPreset(document.getElementById("preset-select").value);
+      });
+      document.getElementById("load-btn-top").addEventListener("click", () => {
+        loadPreset(document.getElementById("preset-select-top").value);
+      });
+      document.querySelectorAll("[data-export-kind]").forEach((button) => {
+        button.addEventListener("click", async (event) => {
+          const element = event.currentTarget;
+          await downloadCardPng(
+            element.dataset.exportKind,
+            element.dataset.exportTarget,
+            element.dataset.exportName
+          );
+        });
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      renderModelButtons();
+      renderScenarioFields();
+      renderPresetSelect();
+      bindStaticEvents();
+      renderAll();
+      window.setTimeout(() => {
+        if (!window.mathJaxReady && !window.mathJaxFailed) {
+          window.renderEquationsFallback();
+        }
+      }, 4500);
+    });
+  </script>
+</body>
+</html>
