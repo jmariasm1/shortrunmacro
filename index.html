@@ -739,7 +739,7 @@
       const i = R + params.pi;
       const moneyDemand = params.MDmax - params.mi * i + params.mY * y;
       const moneySupply = model === "ismp" ? moneyDemand : params.MBar;
-      const savings = savingsValue(params, params.yBar);
+      const savings = savingsValue(params, y);
       const investment = investmentValue(params, params.yBar, R);
       const deltaPi = params.vBar * y + params.oBar;
       const piExpected = params.pi + deltaPi;
@@ -821,6 +821,14 @@
       return [Math.min(min, currentMin - pad), Math.max(max, currentMax + pad)];
     }
 
+    function nearlyEqual(value1, value2) {
+      if (!Number.isFinite(value1) || !Number.isFinite(value2)) {
+        return false;
+      }
+      const scale = Math.max(1, Math.abs(value1), Math.abs(value2));
+      return Math.abs(value1 - value2) <= 1e-6 * scale;
+    }
+
     function sampleInvestmentSavings(params, rDomain, solved) {
       const rValues = linspace(rDomain[0], rDomain[1], 140);
       const investmentCurve = rValues.map((R) => {
@@ -831,12 +839,8 @@
         const y = isCurveY(params, R);
         return savingsValue(params, y);
       });
-      let eqR = solved.R;
-      let eqX = solved.investment;
-      if (Math.abs(params.bI) > 1e-9) {
-        eqR = params.rBar + (params.aI - solved.savingsCoeff) / params.bI;
-        eqX = savingsValue(params, isCurveY(params, eqR));
-      }
+      const eqR = solved.R;
+      const eqX = solved.savings;
       return {
         investment: { x: investmentCurve, y: rValues },
         savings: { x: savingsCurve, y: rValues },
@@ -1116,6 +1120,79 @@
       };
     }
 
+    function horizontalGuideTrace(xRange, yValue) {
+      return {
+        type: "scatter",
+        mode: "lines",
+        x: xRange,
+        y: [yValue, yValue],
+        line: {
+          color: "#101820",
+          width: 1.1,
+          dash: "dot",
+        },
+        hoverinfo: "skip",
+        showlegend: false,
+      };
+    }
+
+    function guideAnnotations(labelHtml, y1, y2) {
+      if (nearlyEqual(y1, y2)) {
+        return [{
+          xref: "paper",
+          yref: "y",
+          x: 0.02,
+          y: y1,
+          text: labelHtml,
+          showarrow: false,
+          xanchor: "left",
+          align: "left",
+          font: {
+            size: 10,
+            color: "#101820",
+            family: "Trebuchet MS, Gill Sans, sans-serif",
+          },
+          bgcolor: "rgba(255,250,242,0.78)",
+        }];
+      }
+      return [
+        {
+          xref: "paper",
+          yref: "y",
+          x: 0.02,
+          y: y1,
+          text: `${labelHtml} (1)`,
+          showarrow: false,
+          xanchor: "left",
+          align: "left",
+          yshift: 9,
+          font: {
+            size: 10,
+            color: "#101820",
+            family: "Trebuchet MS, Gill Sans, sans-serif",
+          },
+          bgcolor: "rgba(255,250,242,0.78)",
+        },
+        {
+          xref: "paper",
+          yref: "y",
+          x: 0.02,
+          y: y2,
+          text: `${labelHtml} (2)`,
+          showarrow: false,
+          xanchor: "left",
+          align: "left",
+          yshift: -9,
+          font: {
+            size: 10,
+            color: "#101820",
+            family: "Trebuchet MS, Gill Sans, sans-serif",
+          },
+          bgcolor: "rgba(255,250,242,0.78)",
+        },
+      ];
+    }
+
     function renderPlot(targetId, traces, layout) {
       if (!window.Plotly) {
         return;
@@ -1128,12 +1205,8 @@
 
     function renderCharts(modelKey, result1, result2) {
       const model = MODEL_META[modelKey];
-      const investmentEqR1 = Math.abs(appState.scenario1.bI) > 1e-9
-        ? appState.scenario1.rBar + (appState.scenario1.aI - result1.savingsCoeff) / appState.scenario1.bI
-        : result1.R;
-      const investmentEqR2 = Math.abs(appState.scenario2.bI) > 1e-9
-        ? appState.scenario2.rBar + (appState.scenario2.aI - result2.savingsCoeff) / appState.scenario2.bI
-        : result2.R;
+      const investmentEqR1 = result1.R;
+      const investmentEqR2 = result2.R;
 
       const sampleYDomain = expandRangeToInclude(SAMPLE_LIMITS.outputGap, [result1.y, result2.y], 0.12, 0.02);
       const sampleRDomain = expandRangeToInclude(SAMPLE_LIMITS.interestRate, [result1.R, result2.R], 0.12, 0.02);
@@ -1157,14 +1230,20 @@
       mainLayout.xaxis.hoverformat = ".2%";
       mainLayout.yaxis.tickformat = ".0%";
       mainLayout.yaxis.hoverformat = ".2%";
-      renderPlot("main-model-plot", [
+      mainLayout.annotations = guideAnnotations("r̄<sub>t</sub>", appState.scenario1.rBar, appState.scenario2.rBar);
+      const mainTraces = [
         lineTrace("IS (1)", curves1.main.curveA, CURVE_COLORS.is, "scenario1"),
         lineTrace(`${modelKey === "ismp" ? "MP" : "LM"} (1)`, curves1.main.curveB, CURVE_COLORS.mpLm, "scenario1"),
         lineTrace("IS (2)", curves2.main.curveA, CURVE_COLORS.is, "scenario2"),
         lineTrace(`${modelKey === "ismp" ? "MP" : "LM"} (2)`, curves2.main.curveB, CURVE_COLORS.mpLm, "scenario2"),
+        horizontalGuideTrace([YDomain[0], YDomain[1]], appState.scenario1.rBar),
+        horizontalGuideTrace([YDomain[0], YDomain[1]], appState.scenario2.rBar),
+      ];
+      mainTraces.push(
         equilibriumTrace(curves1.main.equilibrium, "E1", "scenario1"),
         equilibriumTrace(curves2.main.equilibrium, "E2", "scenario2"),
-      ], mainLayout);
+      );
+      renderPlot("main-model-plot", mainTraces, mainLayout);
 
       const phillipsYDomain = numericDomain([
         ...curves1.phillips.curve.y,
@@ -1216,14 +1295,32 @@
       investmentLayout.yaxis.range = investmentYDomain;
       investmentLayout.yaxis.tickformat = ".0%";
       investmentLayout.yaxis.hoverformat = ".2%";
-      renderPlot("investment-plot", [
+      investmentLayout.annotations = guideAnnotations(modelKey === "ismp" ? "R̄" : "R<sub>t</sub>", result1.R, result2.R);
+      const investmentTraces = [
         lineTrace("I (1)", curves1.investmentSavings.investment, CURVE_COLORS.investment, "scenario1"),
         lineTrace("S (1)", curves1.investmentSavings.savings, CURVE_COLORS.savings, "scenario1"),
         lineTrace("I (2)", curves2.investmentSavings.investment, CURVE_COLORS.investment, "scenario2"),
         lineTrace("S (2)", curves2.investmentSavings.savings, CURVE_COLORS.savings, "scenario2"),
-        equilibriumTrace(curves1.investmentSavings.equilibrium, "E1", "scenario1"),
-        equilibriumTrace(curves2.investmentSavings.equilibrium, "E2", "scenario2"),
-      ], investmentLayout);
+        horizontalGuideTrace([investmentXDomain[0], investmentXDomain[1]], result1.R),
+        horizontalGuideTrace([investmentXDomain[0], investmentXDomain[1]], result2.R),
+      ];
+      if (nearlyEqual(result1.savings, result1.investment)) {
+        investmentTraces.push(equilibriumTrace(curves1.investmentSavings.equilibrium, "E1", "scenario1"));
+      } else {
+        investmentTraces.push(
+          equilibriumTrace({ x: result1.savings, y: result1.R }, "S(1)", "scenario1"),
+          equilibriumTrace({ x: result1.investment, y: result1.R }, "I(1)", "scenario1"),
+        );
+      }
+      if (nearlyEqual(result2.savings, result2.investment)) {
+        investmentTraces.push(equilibriumTrace(curves2.investmentSavings.equilibrium, "E2", "scenario2"));
+      } else {
+        investmentTraces.push(
+          equilibriumTrace({ x: result2.savings, y: result2.R }, "S(2)", "scenario2"),
+          equilibriumTrace({ x: result2.investment, y: result2.R }, "I(2)", "scenario2"),
+        );
+      }
+      renderPlot("investment-plot", investmentTraces, investmentLayout);
 
       const moneyXDomain = numericDomain([
         ...curves1.money.demand.x,
