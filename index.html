@@ -584,7 +584,7 @@
       RBar: { symbolHtml: "R̄", fullName: "Exogenous real interest rate", default: 0.05, step: 0.01, models: ["ismp"] },
       MBar: { symbolHtml: "M̄<sub>t</sub>", fullName: "Exogenous money supply", default: 9.6, step: 0.1, models: ["islm"] },
       pi: { symbolHtml: "π<sub>t</sub>", fullName: "Inflation rate for the current period", default: 0.03, step: 0.01, models: ["ismp", "islm"] },
-      MDmax: { symbolHtml: "M<sup>D</sup><sub>max</sub>", fullName: "Money demand at zero interest rate", default: 10, step: 0.1, models: ["ismp", "islm"] },
+      MDmax: { symbolHtml: "M<sup>D</sup><sub>i=0</sub>", fullName: "Money demand at zero interest rate", default: 10, step: 0.1, models: ["ismp", "islm"] },
       mi: { symbolHtml: "m<sub>i</sub>", fullName: "Sensitivity of money demand to the nominal interest rate", default: 5, step: 0.1, models: ["ismp", "islm"] },
       mY: { symbolHtml: "m<sub>Y</sub>", fullName: "Sensitivity of money demand to the business cycle", default: 1, step: 0.1, models: ["ismp", "islm"] },
       vBar: { symbolHtml: "v̄", fullName: "Sensitivity of the change in inflation to the business cycle", default: 1.25, step: 0.05, models: ["ismp", "islm"] },
@@ -629,7 +629,7 @@
           String.raw`\tilde{Y}_t = \bar{a}_C + \bar{a}_I + \bar{a}_G + \bar{a}_X - \bar{a}_M - 1 - \bar{b}_I\left(R_t - \bar{r}_t \right) - \bar{a}_C \tau`,
           String.raw`R_t = \bar{R}`,
           String.raw`i_t = R_t + \pi_t`,
-          String.raw`M^D_t = M^D_{max} - m_i i_t + m_Y \tilde{Y}_t`,
+          String.raw`M^D_t = M^D_{i=0} - m_i i_t + m_Y \tilde{Y}_t`,
           String.raw`M^S_t = M^D_t`,
           String.raw`S_t = \left[ 1 - (1+\tau)\bar{a}_C - \bar{a}_G - \bar{a}_X + \bar{a}_M \right] \bar{Y}_t`,
           String.raw`I_t = \left[ \bar{a}_I - \bar{b}_I\left(R_t - \bar{r}_t\right) \right] \bar{Y}_t`,
@@ -643,9 +643,9 @@
         marketSuffix: " (IS-LM)",
         latexEquations: [
           String.raw`\tilde{Y}_t = \bar{a}_C + \bar{a}_I + \bar{a}_G + \bar{a}_X - \bar{a}_M - 1 - \bar{b}_I\left(R_t - \bar{r}_t \right) - \bar{a}_C \tau`,
-          String.raw`\tilde{Y}_t = \frac{\bar{M}_t}{m_Y} - \frac{M^D_{max}}{m_Y} + \frac{m_i}{m_Y}\left(R_t + \pi_t\right)`,
+          String.raw`\tilde{Y}_t = \frac{\bar{M}_t}{m_Y} - \frac{M^D_{i=0}}{m_Y} + \frac{m_i}{m_Y}\left(R_t + \pi_t\right)`,
           String.raw`i_t = R_t + \pi_t`,
-          String.raw`M^D_t = M^D_{max} - m_i i_t + m_Y \tilde{Y}_t`,
+          String.raw`M^D_t = M^D_{i=0} - m_i i_t + m_Y \tilde{Y}_t`,
           String.raw`M^S_t = \bar{M}_t`,
           String.raw`M^S_t = M^D_t`,
           String.raw`S_t = \left[ 1 - (1+\tau)\bar{a}_C - \bar{a}_G - \bar{a}_X + \bar{a}_M \right] \bar{Y}_t`,
@@ -1256,6 +1256,7 @@
       phillipsLayout.yaxis.range = phillipsYDomain;
       phillipsLayout.xaxis.tickformat = ".0%";
       phillipsLayout.xaxis.hoverformat = ".2%";
+      phillipsLayout.yaxis.hoverformat = ".3f";
       renderPlot("phillips-plot", [
         lineTrace("PC (1)", curves1.phillips.curve, CURVE_COLORS.phillips, "scenario1"),
         lineTrace("PC (2)", curves2.phillips.curve, CURVE_COLORS.phillips, "scenario2"),
@@ -1274,6 +1275,7 @@
       okunLayout.yaxis.range = okunYDomain;
       okunLayout.xaxis.tickformat = ".0%";
       okunLayout.xaxis.hoverformat = ".2%";
+      okunLayout.yaxis.hoverformat = ".3f";
       renderPlot("okun-plot", [
         lineTrace("Okun (1)", curves1.okun.curve, CURVE_COLORS.okun, "scenario1"),
         lineTrace("Okun (2)", curves2.okun.curve, CURVE_COLORS.okun, "scenario2"),
